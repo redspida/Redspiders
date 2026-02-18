@@ -7,41 +7,88 @@
     <style>
         body { margin: 0; background: #050000; overflow: hidden; font-family: sans-serif; touch-action: none; -webkit-user-select: none; }
         
-        /* Menu & Popups */
-        #menu, #shop-popup {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(15, 0, 0, 0.98); padding: 35px; border: 3px solid #ff0000;
-            color: white; text-align: center; z-index: 9999; border-radius: 15px; width: 320px;
-            box-shadow: 0 0 30px #aa0000;
+        #focus-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); color: #ff0000; display: none;
+            align-items: center; justify-content: center; z-index: 10001;
+            font-weight: bold; font-size: 28px; cursor: pointer; text-shadow: 0 0 15px #f00;
         }
+
+        #menu, #shop-popup { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            background: rgba(15, 0, 0, 0.98); padding: 35px; border: 3px solid #ff0000; 
+            color: white; text-align: center; z-index: 9999; border-radius: 15px; 
+            width: 320px; box-shadow: 0 0 30px #aa0000; 
+        }
+
         #shop-popup { display: none; width: 280px; }
-        
         .input-wrap { position: relative; width: 90%; margin: 0 auto 12px auto; }
-        input { padding: 12px; width: 100%; border-radius: 8px; border: 1px solid #400; background: #1a0000; color: white; outline: none; box-sizing: border-box; }
         
-        /* Buttons */
-        #play-btn, .close-btn { width: 100%; padding: 18px; background: #990000; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; font-size: 20px; }
-        .close-btn { padding: 10px; font-size: 16px; background: #444; }
+        input { 
+            padding: 12px; width: 100%; border-radius: 8px; border: 1px solid #400; 
+            background: #1a0000; color: white; outline: none; box-sizing: border-box; 
+        }
 
-        /* Navigation UI */
+        #play-btn, .close-btn { 
+            width: 100%; padding: 18px; background: #990000; color: white; border: none; 
+            font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; font-size: 20px; 
+        }
+
         #id-container { position: fixed; top: 10px; left: 10px; display: flex; gap: 5px; z-index: 1000; }
-        #id-display { color: #ff3333; background: rgba(0,0,0,0.8); padding: 8px; border-radius: 5px; font-family: monospace; border: 1px solid #600; font-size: 11px; }
+        #id-display { color: #ff3333; background: rgba(0, 0, 0, 0.8); padding: 8px; border-radius: 5px; font-family: monospace; border: 1px solid #600; font-size: 11px; }
         #copy-btn { background: #400; color: #ff3333; border: 1px solid #ff0000; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 10px; font-weight: bold; }
-        
-        #nav-right { position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 1000; }
-        .nav-btn { padding: 10px 15px; background: #200; color: #ff3333; border: 2px solid #ff0000; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        #ui-container { position: fixed; top: 60px; right: 10px; display: flex; flex-direction: column; gap: 5px; z-index: 1000; }
+        #chat-container { position: fixed; top: 50px; left: 10px; width: 250px; z-index: 1000; pointer-events: none; }
+        #chat-box { height: 140px; background: rgba(0, 0, 0, 0.15); border-radius: 5px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 5px; margin-bottom: 5px; border: 1px solid rgba(255,0,0,0.1); }
+        .chat-msg { color: white; font-size: 11px; margin-bottom: 2px; background: rgba(0,0,0,0.5); padding: 3px 6px; border-radius: 4px; word-wrap: break-word; border-left: 2px solid #ff0000; }
+        
+        .chat-input-row { display: flex; gap: 5px; pointer-events: auto; }
+        #chat-input { flex-grow: 1; background: rgba(20, 0, 0, 0.9); border: 1px solid #800; color: white; padding: 8px; border-radius: 5px; }
+        #chat-log-btn { background: transparent; color: #ff3333; border: 2px solid #ff0000; padding: 5px 8px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+
+        #log-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 350px; height: 450px; background: rgba(15,0,0,0.98); border: 2px solid #f00; z-index: 10000; border-radius: 10px; flex-direction: column; padding: 15px; box-shadow: 0 0 50px #000; }
+        #log-content { flex-grow: 1; overflow-y: auto; background: #000; padding: 10px; border: 1px solid #300; margin-bottom: 10px; color: #ccc; font-size: 13px; line-height: 1.4; }
+
+        #nav-right { position: fixed; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 1000; }
+        .nav-btn { padding: 10px 15px; background: transparent; color: #ff3333; border: 2px solid #ff0000; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
+        #ui-container { position: fixed; top: 60px; right: 10px; display: flex; flex-direction: column; gap: 5px; z-index: 1000; align-items: flex-end; }
         .bar-bg { width: 150px; height: 20px; background: #333; border: 2px solid #ff0000; border-radius: 5px; overflow: hidden; position: relative; }
         #health-fill { width: 100%; height: 100%; background: #ff0000; transition: width 0.2s; float: right; }
-        .bar-text { position: absolute; left: 5px; top: 0px; color: white; font-weight: bold; font-size: 12px; z-index: 1001; text-shadow: 1px 1px 2px black; }
+        .bar-text { position: absolute; left: 5px; top: 0px; color: white; font-weight: bold; font-size: 12px; z-index: 1001; }
+        
+        #leaderboard { background: rgba(20, 0, 0, 0.85); border: 2px solid #600; padding: 10px; border-radius: 8px; width: 220px; color: #fff; font-size: 12px; margin-top: 5px; }
+        .lb-header { font-weight: bold; border-bottom: 1px solid #ff0000; color: #ff3333; display: grid; grid-template-columns: 2fr 1fr 1fr; }
+        .lb-row { display: grid; grid-template-columns: 2fr 1fr 1fr; margin-bottom: 2px; }
     </style>
 </head>
-<body>
+<body onclick="handleGlobalClick(event)">
+
+    <div id="focus-overlay" onclick="resumeAction()">CLICK TO RESUME ACTION</div>
 
     <div id="id-container">
         <div id="id-display">ID: <span id="my-id">...</span></div>
         <button id="copy-btn" onclick="copyID()">COPY</button>
+    </div>
+
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Press Enter to chat..." onfocus="setTyping(true)" onblur="setTyping(false)" onkeydown="handleChatKeys(event, 'chat-input')">
+            <button id="chat-log-btn" onclick="toggleChatLog()">📜</button>
+        </div>
+    </div>
+
+    <div id="log-popup">
+        <h3 style="color:red; margin:0 0 10px 0; display: flex; justify-content: space-between;">
+            <span>Account History</span>
+            <span onclick="toggleChatLog()" style="cursor:pointer;">&times;</span>
+        </h3>
+        <div id="log-content"></div>
+        <div class="chat-input-row">
+            <input type="text" id="log-chat-input" placeholder="Chat from history..." onfocus="setTyping(true)" onblur="setTyping(false)" onkeydown="handleChatKeys(event, 'log-chat-input')">
+        </div>
+        <button class="close-btn" onclick="toggleChatLog()" style="padding:10px; margin-top:10px; font-size: 14px;">Close</button>
     </div>
 
     <div id="nav-right">
@@ -52,38 +99,94 @@
     <div id="ui-container">
         <div class="bar-bg"><div class="bar-text" id="hp-label">100 HP</div><div id="health-fill"></div></div>
         <div class="bar-bg" style="border-color:#888;"><span style="position:absolute;left:5px;top:0px;font-size:12px;">🔴</span><div class="bar-text" id="ruby-count-text" style="margin-left:22px;">0</div></div>
+        <div id="leaderboard">
+            <div class="lb-header"><span>NAME</span><span>K/D</span><span>RUBIES</span></div>
+            <div id="lb-content"></div>
+        </div>
     </div>
 
     <div id="shop-popup">
         <h2 style="color: #ff0000; margin: 0;">RUBY SHOP</h2>
-        <p style="color: #ccc; margin: 20px 0;">New skins and upgrades are currently in development.</p>
-        <div style="font-size: 30px; margin-bottom: 10px;">🚧</div>
-        <h3 style="color: #fff; letter-spacing: 2px;">COMING SOON</h3>
-        <button class="close-btn" onclick="toggleShop()">BACK TO GAME</button>
+        <p style="color: #ccc; margin: 20px 0;">New skins in development.</p>
+        <button class="close-btn" onclick="toggleShop()">BACK</button>
     </div>
 
     <div id="menu">
         <h2 style="color: #ff0000; margin: 0 0 10px 0;">REDSPIDERS GAME</h2>
-        <div class="input-wrap"><input type="text" id="username" placeholder="USERNAME" onfocus="typingMode=true" onblur="typingMode=false"></div>
-        <div class="input-wrap"><input type="password" id="password" placeholder="PASSWORD" onfocus="typingMode=true" onblur="typingMode=false"></div>
-        <input style="width:90%; margin: 0 auto 10px auto; display:block;" type="text" id="friendID" placeholder="JOIN WORLD ID..." onfocus="typingMode=true" onblur="typingMode=false">
+        <div class="input-wrap"><input type="text" id="username" placeholder="USERNAME" onfocus="setTyping(true)" onblur="setTyping(false)"></div>
+        <div class="input-wrap"><input type="password" id="password" placeholder="PASSWORD" onfocus="setTyping(true)" onblur="setTyping(false)"></div>
+        <input style="width:90%; margin: 0 auto 10px auto; display:block;" type="text" id="friendID" placeholder="JOIN WORLD ID..." onfocus="setTyping(true)" onblur="setTyping(false)">
         <button id="play-btn" onclick="startGame()">DROP DOWN</button>
     </div>
 
     <script>
         let player, platforms, otherPlayers, cursors, keys, myNameTag, chargeBar, rubies, portals, starLayer;
-        let gameHasFocus = false, myUsername = "", typingMode = false, shopOpen = false;
-        let peer, conn, remotePlayers = {};
+        let gameHasFocus = false, myUsername = "", typingMode = false, shopOpen = false, logOpen = false;
+        let peer, conn, remotePlayers = {}, rubyMap = {};
         let jumpCount = 0, chargeTimer = 0, isCharging = false, lastWarpTime = 0, myHealth = 100, myRubies = 0;
-        let joyBase, joyThumb, btnJump, btnPush, pushActive = false, isJoyTouching = false, joyMoveX = 0, lastHitTime = 0;
+        let myKills = 0, myDeaths = 0, lastHitBy = null, lastHitTime = 0;
+        let joyBase, joyThumb, btnJump, btnPush, pushActive = false, joyPointer = null, joyMoveX = 0;
+        let accountKey = "";
+
+        function setTyping(val) { 
+            typingMode = val; 
+            if(val && player?.body) player.setVelocityX(0); 
+        }
+
+        function saveRubies() {
+            if (accountKey) { localStorage.setItem(`rubies_${accountKey}`, myRubies); }
+        }
+
+        function handleChatKeys(e, inputId) {
+            if (e.key === 'Enter') {
+                const input = document.getElementById(inputId);
+                const text = input.value.trim();
+                if (text) {
+                    if (conn?.open) conn.send({ type: 'CHAT', name: myUsername, text: text });
+                    addChatMessage(myUsername, text);
+                    input.value = "";
+                }
+                if (inputId === 'chat-input') {
+                    input.blur();
+                    if (game && game.canvas) game.canvas.focus();
+                }
+            }
+            e.stopPropagation();
+        }
+
+        function addChatMessage(name, text) {
+            const box = document.getElementById('chat-box');
+            const log = document.getElementById('log-content');
+            const div = document.createElement('div');
+            div.className = 'chat-msg';
+            div.innerHTML = `<strong>${name}:</strong> ${text}`;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+            setTimeout(() => { if(div.parentNode) box.removeChild(div); }, 10000);
+            const logDiv = document.createElement('div');
+            logDiv.style.marginBottom = "5px";
+            logDiv.innerHTML = `<span style="color:#666; font-size:10px;">[${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}]</span> <b style="color:#f33;">${name}:</b> ${text}`;
+            log.appendChild(logDiv);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function handleGlobalClick(e) {
+            if (e.target.tagName !== 'INPUT' && gameHasFocus && !shopOpen && !logOpen) resumeAction();
+        }
+
+        function resumeAction() {
+            document.getElementById('focus-overlay').style.display = 'none';
+            setTyping(false);
+            window.focus();
+        }
 
         const config = {
             type: Phaser.AUTO,
             width: window.innerWidth,
             height: window.innerHeight,
             physics: { default: 'arcade', arcade: { gravity: { y: 1600 } } },
-            input: { activePointers: 4 }, 
-            scene: { preload: preload, create: create, update: update }
+            input: { activePointers: 5 }, // Multi-touch support
+            scene: { preload, create, update }
         };
 
         const game = new Phaser.Game(config);
@@ -95,7 +198,7 @@
         function create() {
             this.physics.world.setBounds(0, 0, 5000, 2000);
             starLayer = this.add.graphics().setScrollFactor(0.1);
-            for(let i=0; i<450; i++) {
+            for (let i = 0; i < 600; i++) {
                 starLayer.fillStyle(0xffffff, Math.random());
                 starLayer.fillCircle(Math.random()*5000, Math.random()*2000, Math.random()*1.5);
             }
@@ -115,64 +218,59 @@
                 }
             };
 
-            createPlat(100, 750, 8); createPlat(1100, 850, 10); createPlat(2200, 650, 12); createPlat(3800, 850, 12);
-            createPlat(500, 450, 4); createPlat(1600, 550, 6); createPlat(3000, 400, 5);
-            createPlat(2400, 950, 6); createPlat(100, 1100, 5); createPlat(3200, 1200, 8);
+            createPlat(2200, 650, 12); createPlat(3000, 400, 5);  createPlat(2400, 850, 10); 
+            createPlat(1500, 1000, 4); createPlat(3200, 1100, 6); createPlat(4200, 1300, 3); 
+            createPlat(800, 1100, 5);  createPlat(2000, 1500, 8); createPlat(3800, 450, 4);  
+            createPlat(500, 950, 3);   createPlat(2800, 1250, 2); createPlat(100, 750, 8); 
+            createPlat(1100, 850, 10); createPlat(3800, 850, 12); createPlat(500, 450, 4); 
+            createPlat(1600, 550, 6);  createPlat(650, 1300, 5); createPlat(1800, 1400, 15);
 
             spawnPortal(300, 500, 4500, 600); spawnPortal(4500, 600, 300, 500);
 
             player = this.physics.add.sprite(2500, 400, `skin1_idle`).setDragX(1500).setCollideWorldBounds(true);
             player.body.setSize(50, 35);
+
             myNameTag = this.add.text(player.x, player.y - 70, '', { fontSize: '18px', fill: '#fff' }).setOrigin(0.5);
             chargeBar = this.add.graphics();
 
             this.physics.add.collider(player, platforms);
-            this.physics.add.collider(player, otherPlayers); 
+            this.physics.add.collider(player, otherPlayers);
             this.physics.add.overlap(player, rubies, collectRuby, null, this);
             this.physics.add.overlap(player, portals, handleWarp, null, this);
 
             setupMobileControls(this);
             cursors = this.input.keyboard.createCursorKeys();
-            keys = this.input.keyboard.addKeys('W,A,S,D,E,M,SHIFT');
-            this.cameras.main.startFollow(player, true, 0.1, 0.1).setBackgroundColor('#050000');
+            keys = this.input.keyboard.addKeys('W,A,S,D,E,M,SHIFT,ENTER');
             
+            this.cameras.main.startFollow(player, true, 0.1, 0.1).setBackgroundColor('#050000');
             peer = new Peer();
             peer.on('open', id => document.getElementById('my-id').innerText = id);
             peer.on('connection', setupConnection);
             this.scene.pause();
         }
 
-        window.toggleShop = () => {
-            shopOpen = !shopOpen;
-            document.getElementById('shop-popup').style.display = shopOpen ? 'block' : 'none';
-            if (shopOpen) { game.scene.pause('default'); gameHasFocus = false; }
-            else if (!document.getElementById('menu').style.display.includes('block')) { game.scene.resume('default'); gameHasFocus = true; }
-        };
-
         function update(time, delta) {
+            if (!gameHasFocus || typingMode || shopOpen || logOpen) return;
             if (Phaser.Input.Keyboard.JustDown(keys.M)) toggleMenu();
-            if (!gameHasFocus || typingMode || shopOpen) return;
             
             let vx = 0;
-            if (cursors.left.isDown || keys.A.isDown || (isJoyTouching && joyMoveX < -0.3)) { vx = -450; player.setFlipX(true); }
-            else if (cursors.right.isDown || keys.D.isDown || (isJoyTouching && joyMoveX > 0.3)) { vx = 450; player.setFlipX(false); }
+            if (cursors.left.isDown || keys.A.isDown || (joyPointer && joyMoveX < -0.3)) { vx = -450; player.setFlipX(true); }
+            else if (cursors.right.isDown || keys.D.isDown || (joyPointer && joyMoveX > 0.3)) { vx = 450; player.setFlipX(false); }
             player.setVelocityX(vx || player.body.velocity.x * 0.8);
             
             if (player.body.touching.down) jumpCount = 0;
-            if ((Phaser.Input.Keyboard.JustDown(cursors.up) || Phaser.Input.Keyboard.JustDown(keys.W)) && jumpCount < 2) {
-                player.setVelocityY(-850); jumpCount++;
-            }
-
+            if ((Phaser.Input.Keyboard.JustDown(cursors.up) || Phaser.Input.Keyboard.JustDown(keys.W)) && jumpCount < 2) { player.setVelocityY(-850); jumpCount++; }
+            
             chargeBar.clear();
             if (keys.E.isDown || keys.SHIFT.isDown || pushActive) {
-                isCharging = true;
-                chargeTimer = Math.min(chargeTimer + delta, 2000);
-                drawChargeBar(chargeBar, player.x, player.y, chargeTimer / 2000);
+                isCharging = true; chargeTimer = Math.min(chargeTimer + delta, 2000);
+                drawChargeBar(chargeBar, player.x, player.y, chargeTimer / 2000, true);
+                if (Phaser.Input.Keyboard.JustDown(keys.E)) triggerNormalPush();
             } else if (isCharging) handleAttackRelease();
             
+            otherPlayers.children.iterate(p => { if (p && p.charging) drawChargeBar(chargeBar, p.x, p.y, p.chargeVal, false); });
             myNameTag.setPosition(player.x, player.y - 70).setText(`${myUsername} [${Math.ceil(myHealth)}/100]`);
-            if (conn?.open) conn.send({ type: 'MOVE', x: player.x, y: player.y, flip: player.flipX, name: myUsername, charging: isCharging, hp: myHealth });
-            
+            if (conn?.open) conn.send({ type: 'MOVE', x: player.x, y: player.y, flip: player.flipX, name: myUsername, charging: isCharging, chargeVal: chargeTimer / 2000, hp: myHealth, kills: myKills, deaths: myDeaths, rubies: myRubies });
             if (player.y > 1800) handleDeath(Date.now() - lastHitTime < 3000 ? 'void_pushed' : 'void_fall');
         }
 
@@ -180,125 +278,108 @@
             document.getElementById('health-fill').style.width = myHealth + '%';
             document.getElementById('hp-label').innerText = Math.ceil(myHealth) + ' HP';
             document.getElementById('ruby-count-text').innerText = Math.floor(myRubies);
+            updateLeaderboard();
         }
 
-        // --- Core Helpers ---
-        function spawnPortal(x, y, tx, ty) {
-            let p = game.scene.scenes[0].add.circle(x, y, 45, 0x440000, 0.8).setStrokeStyle(4, 0x880000);
-            game.scene.scenes[0].physics.add.existing(p, true);
-            p.targetX = tx; p.targetY = ty; portals.add(p);
+        function updateLeaderboard() {
+            let list = [{ name: myUsername, kills: myKills, deaths: myDeaths, rubies: myRubies }];
+            for (let id in remotePlayers) { let p = remotePlayers[id]; list.push({ name: p.userName || "Guest", kills: p.kills || 0, deaths: p.deaths || 0, rubies: p.rubies || 0 }); }
+            list.sort((a, b) => b.kills - a.kills);
+            let html = "";
+            list.forEach(item => { let kd = item.deaths === 0 ? item.kills : (item.kills / item.deaths).toFixed(1); html += `<div class="lb-row"><span>${item.name}</span><span>${kd}</span><span>${Math.floor(item.rubies)}</span></div>`; });
+            document.getElementById('lb-content').innerHTML = html;
         }
-        function handleWarp(p, portal) {
-            if (Date.now() - lastWarpTime > 1500) { player.setPosition(portal.targetX, portal.targetY); lastWarpTime = Date.now(); }
-        }
-        function spawnRuby(x, y, isSuper) {
-            let r = game.scene.scenes[0].add.text(x, y, "🔴", { fontSize: isSuper ? '35px' : '18px' }).setOrigin(0.5);
-            game.scene.scenes[0].physics.add.existing(r, true);
-            r.value = isSuper ? 200 : 1; r.isSuper = isSuper; rubies.add(r);
-        }
-        function showDamage(x, y, amt) {
-            let scene = game.scene.scenes[0];
-            let txt = scene.add.text(x, y - 20, `-${amt}`, { fontSize: '24px', fill: '#ff0000', fontWeight: 'bold' }).setOrigin(0.5);
-            scene.tweens.add({ targets: txt, y: y - 100, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
-        }
-        function collectRuby(p, r) {
-            myRubies += r.value; myHealth = Math.min(100, myHealth + (r.isSuper ? 50 : 2));
-            localStorage.setItem(`rubies_${myUsername}`, myRubies);
-            updateUI(); const rx = r.x, ry = r.y, isS = r.isSuper; r.destroy();
-            setTimeout(() => { if (gameHasFocus) spawnRuby(rx, ry, isS); }, isS ? 60000 : 8000);
-        }
+
         function handleDeath(cause) {
-            let loss = cause === 'void_pushed' ? 35 : (cause === 'void_fall' ? 20 : 40);
-            myRubies = Math.max(0, myRubies - loss);
-            localStorage.setItem(`rubies_${myUsername}`, myRubies);
-            player.setPosition(2500, 400); myHealth = 100; updateUI();
+            myDeaths++; myRubies = Math.max(0, myRubies - (cause === 'void_pushed' ? 35 : 20)); saveRubies();
+            if (lastHitBy && (Date.now() - lastHitTime < 5000)) { if (conn?.open) conn.send({ type: 'KILLED_ME', killerId: lastHitBy }); }
+            player.setPosition(2500, 400); myHealth = 100; lastHitBy = null; updateUI();
         }
-        function drawChargeBar(g, x, y, p) {
-            g.fillStyle(0x000000, 0.5); g.fillRect(x - 30, y - 55, 60, 8);
-            g.fillStyle(p >= 1 ? 0xff0000 : 0x888888, 1); g.fillRect(x - 30, y - 55, 60 * p, 8);
-        }
-        function handleAttackRelease() {
-            let dir = player.flipX ? -1 : 1;
-            if (chargeTimer >= 2000) fireProjectile(player.x, player.y, dir, true);
-            else if (conn?.open) conn.send({ type: 'ATTACK', pushDir: dir, x: player.x, y: player.y, isBig: false });
-            chargeTimer = 0; isCharging = false;
-        }
-        function fireProjectile(x, y, dir, isMine) {
-            let ball = game.scene.scenes[0].add.circle(x, y, 25, isMine ? 0xffffff : 0xff0000, 1);
-            game.scene.scenes[0].physics.add.existing(ball);
-            ball.body.setAllowGravity(false).setVelocityX(dir * 1400);
-            if (isMine && conn?.open) conn.send({ type: 'ATTACK', pushDir: dir, x: x, y: y, isBig: true });
-            setTimeout(() => ball.destroy(), 3000);
-        }
-        function setupConnection(c) {
-            conn = c;
-            conn.on('data', data => {
-                if (data.type === 'MOVE') {
-                    let p = remotePlayers[c.peer];
-                    if (!p) {
-                        p = otherPlayers.create(data.x, data.y, null);
-                        p.body.setAllowGravity(false).setImmovable(true);
-                        p.tag = game.scene.scenes[0].add.text(0, 0, '', { fontSize: '14px', fill: '#f00' }).setOrigin(0.5);
-                        remotePlayers[c.peer] = p;
-                    }
-                    p.setPosition(data.x, data.y).setFlipX(data.flip);
-                    p.tag.setPosition(data.x, data.y - 70).setText(`${data.name} [${Math.ceil(data.hp)}/100]`);
-                }
-                if (data.type === 'ATTACK') {
-                    if (data.isBig) fireProjectile(data.x, data.y, data.pushDir, false);
-                    let dist = Phaser.Math.Distance.Between(player.x, player.y, data.x, data.y);
-                    if (dist < (data.isBig ? 400 : 150)) {
-                        player.setVelocity(data.pushDir * (data.isBig ? 9500 : 1500), -900);
-                        myHealth -= (data.isBig ? 25 : 5); lastHitTime = Date.now();
-                        showDamage(player.x, player.y, (data.isBig ? 25 : 5));
-                        updateUI(); if(myHealth <= 0) handleDeath('killed');
-                    }
-                }
-            });
-        }
-
-        window.copyID = () => {
-            const idText = document.getElementById('my-id').innerText;
-            navigator.clipboard.writeText(idText).then(() => {
-                const btn = document.getElementById('copy-btn');
-                btn.innerText = "COPIED!";
-                setTimeout(() => btn.innerText = "COPY", 2000);
-            });
-        };
-        window.toggleMenu = () => {
-            gameHasFocus = !gameHasFocus;
-            document.getElementById('menu').style.display = gameHasFocus ? 'none' : 'block';
-            gameHasFocus ? game.scene.resume('default') : game.scene.pause('default');
-        };
-        window.startGame = () => {
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
-            if (!u || !p) return alert("ENTER DETAILS");
-            myUsername = u;
-            myRubies = parseInt(localStorage.getItem(`rubies_${u}`)) || 0;
-            const fId = document.getElementById('friendID').value.trim();
-            if (fId && peer) setupConnection(peer.connect(fId));
-            updateUI(); toggleMenu();
-        };
 
         function setupMobileControls(scene) {
             const sw = window.innerWidth, sh = window.innerHeight;
             joyBase = scene.add.circle(120, sh - 120, 60, 0xffffff, 0.1).setScrollFactor(0).setInteractive();
             joyThumb = scene.add.circle(120, sh - 120, 30, 0xffffff, 0.3).setScrollFactor(0);
-            scene.input.on('pointerdown', (p) => { if (Phaser.Math.Distance.Between(p.x, p.y, joyBase.x, joyBase.y) < 70) isJoyTouching = true; });
-            scene.input.on('pointermove', (p) => { if (isJoyTouching) {
-                let angle = Phaser.Math.Angle.Between(joyBase.x, joyBase.y, p.x, p.y);
-                let dist = Math.min(Phaser.Math.Distance.Between(p.x, p.y, joyBase.x, joyBase.y), 45);
-                joyThumb.x = joyBase.x + Math.cos(angle) * dist; joyThumb.y = joyBase.y + Math.sin(angle) * dist; joyMoveX = Math.cos(angle);
-            }});
-            scene.input.on('pointerup', () => { isJoyTouching = false; joyThumb.x = joyBase.x; joyThumb.y = joyBase.y; joyMoveX = 0; });
+            
+            scene.input.on('pointerdown', (p) => { if (Phaser.Math.Distance.Between(p.x, p.y, joyBase.x, joyBase.y) < 80) joyPointer = p; });
+            scene.input.on('pointermove', (p) => { if (joyPointer && p.id === joyPointer.id) { let angle = Phaser.Math.Angle.Between(joyBase.x, joyBase.y, p.x, p.y); let dist = Math.min(Phaser.Math.Distance.Between(p.x, p.y, joyBase.x, joyBase.y), 45); joyThumb.x = joyBase.x + Math.cos(angle) * dist; joyThumb.y = joyBase.y + Math.sin(angle) * dist; joyMoveX = Math.cos(angle); } });
+            scene.input.on('pointerup', (p) => { if (joyPointer && p.id === joyPointer.id) { joyPointer = null; joyThumb.x = joyBase.x; joyThumb.y = joyBase.y; joyMoveX = 0; } });
+            
             btnJump = scene.add.circle(sw - 80, sh - 100, 55, 0x888888, 0.4).setInteractive().setScrollFactor(0);
-            scene.add.text(sw - 80, sh - 100, '▲', { fontSize: '42px', color: '#fff' }).setOrigin(0.5).setScrollFactor(0);
+            scene.add.text(sw - 80, sh - 100, '↑', { fontSize: '40px', fill: '#fff' }).setOrigin(0.5).setScrollFactor(0);
             btnJump.on('pointerdown', () => { if (jumpCount < 2) { player.setVelocityY(-850); jumpCount++; }});
+            
             btnPush = scene.add.circle(sw - 160, sh - 180, 40, 0x888888, 0.4).setInteractive().setScrollFactor(0);
-            btnPush.on('pointerdown', () => { pushActive = true; isCharging = true; });
+            btnPush.on('pointerdown', () => { pushActive = true; isCharging = true; triggerNormalPush(); });
             btnPush.on('pointerup', () => { pushActive = false; handleAttackRelease(); });
         }
+
+        function triggerNormalPush() {
+            let dir = player.flipX ? -1 : 1; let attackX = player.x + (dir * 35);
+            if (conn?.open) conn.send({ type: 'ATTACK', pushDir: dir, x: attackX, y: player.y, isBig: false, attackerId: peer.id });
+            showPushEffect(attackX, player.y, true);
+        }
+
+        function spawnRuby(x, y, isSuper) {
+            let rubyId = `ruby_${x}_${y}`; if (rubyMap[rubyId]) return;
+            let r = game.scene.scenes[0].add.text(x, y, "🔴", { fontSize: isSuper ? '35px' : '18px' }).setOrigin(0.5);
+            game.scene.scenes[0].physics.add.existing(r, true); r.body.allowGravity = false;
+            r.value = isSuper ? 200 : 1; r.isSuper = isSuper; r.rubyId = rubyId; rubies.add(r); rubyMap[rubyId] = r;
+        }
+
+        function collectRuby(p, r) {
+            const id = r.rubyId; myRubies += r.value; myHealth = Math.min(100, myHealth + (r.isSuper ? 50 : 2)); saveRubies();
+            if (conn?.open) conn.send({ type: 'RUBY_TAKEN', rubyId: id });
+            removeRubyLocal(id); updateUI();
+            setTimeout(() => { if (gameHasFocus) { spawnRuby(r.x, r.y, r.isSuper); if (conn?.open) conn.send({ type: 'RUBY_SPAWN', x: r.x, y: r.y, isSuper: r.isSuper }); }}, r.isSuper ? 60000 : 8000);
+        }
+
+        function removeRubyLocal(id) { if (rubyMap[id]) { rubyMap[id].destroy(); delete rubyMap[id]; } }
+        function handleWarp(p, portal) { if (Date.now() - lastWarpTime > 1500) { player.setPosition(portal.targetX, portal.targetY); lastWarpTime = Date.now(); } }
+        function handleAttackRelease() { let dir = player.flipX ? -1 : 1; if (chargeTimer >= 2000) fireProjectile(player.x + (dir * 50), player.y, dir, true); chargeTimer = 0; isCharging = false; }
+        function fireProjectile(x, y, dir, isMine) { let ball = game.scene.scenes[0].add.circle(x, y, 25, isMine ? 0xffffff : 0xff0000, 1); game.scene.scenes[0].physics.add.existing(ball); ball.body.setAllowGravity(false).setVelocityX(dir * 1400); if (isMine && conn?.open) conn.send({ type: 'ATTACK', pushDir: dir, x: x, y: y, isBig: true, attackerId: peer.id }); setTimeout(() => ball.destroy(), 3000); }
+        function showPushEffect(x, y, isMine) { let color = isMine ? 0xdddddd : 0xff0000; let circle = game.scene.scenes[0].add.circle(x, y, 5, color, 0.6); game.scene.scenes[0].tweens.add({ targets: circle, radius: 85, alpha: 0, duration: 200, onComplete: () => circle.destroy() }); }
+        function drawChargeBar(g, x, y, p, isMine) { let color = isMine ? (p >= 1 ? 0xffffff : 0x888888) : (p >= 1 ? 0xff0000 : 0x660000); g.fillStyle(0x000000, 0.5); g.fillRect(x - 30, y - 55, 60, 8); g.fillStyle(color, 1); g.fillRect(x - 30, y - 55, 60 * p, 8); }
+
+        function toggleChatLog() { logOpen = !logOpen; document.getElementById('log-popup').style.display = logOpen ? 'flex' : 'none'; if(logOpen) document.getElementById('log-chat-input').focus(); }
+        function setupConnection(c) {
+            conn = c;
+            conn.on('data', data => {
+                if (data.type === 'CHAT') addChatMessage(data.name, data.text);
+                if (data.type === 'MOVE') {
+                    let p = remotePlayers[c.peer]; if (!p) { p = otherPlayers.create(data.x, data.y, null); p.body.setAllowGravity(false).setImmovable(true); p.tag = game.scene.scenes[0].add.text(0, 0, '', { fontSize: '14px', fill: '#f00' }).setOrigin(0.5); remotePlayers[c.peer] = p; }
+                    p.setPosition(data.x, data.y).setFlipX(data.flip); p.userName = data.name; p.kills = data.kills; p.deaths = data.deaths; p.rubies = data.rubies; p.charging = data.charging; p.chargeVal = data.chargeVal; p.tag.setPosition(data.x, data.y - 70).setText(`${data.name} [${Math.ceil(data.hp)}/100]`); updateLeaderboard();
+                }
+                if (data.type === 'ATTACK') {
+                    if (data.isBig) fireProjectile(data.x, data.y, data.pushDir, false); else showPushEffect(data.x, data.y, false);
+                    let dist = Phaser.Math.Distance.Between(player.x, player.y, data.x, data.y);
+                    if (dist < (data.isBig ? 400 : 130)) { player.setVelocity(data.pushDir * (data.isBig ? 95000 : 550), 0); myHealth -= (data.isBig ? 25 : 5); lastHitBy = c.peer; lastHitTime = Date.now(); updateUI(); if (myHealth <= 0) handleDeath('killed'); }
+                }
+                if (data.type === 'KILLED_ME' && data.killerId === peer.id) { myKills++; updateUI(); }
+                if (data.type === 'RUBY_TAKEN') removeRubyLocal(data.rubyId);
+                if (data.type === 'RUBY_SPAWN') spawnRuby(data.x, data.y, data.isSuper);
+            });
+        }
+
+        function spawnPortal(x, y, tx, ty) { let p = game.scene.scenes[0].add.circle(x, y, 40, 0x300000, 0.7).setStrokeStyle(3, 0xff0000); game.scene.scenes[0].physics.add.existing(p, true); p.targetX = tx; p.targetY = ty; portals.add(p); }
+        window.copyID = () => navigator.clipboard.writeText(document.getElementById('my-id').innerText);
+        window.toggleShop = () => { shopOpen = !shopOpen; document.getElementById('shop-popup').style.display = shopOpen ? 'block' : 'none'; };
+        window.toggleMenu = () => { gameHasFocus = !gameHasFocus; document.getElementById('menu').style.display = gameHasFocus ? 'none' : 'block'; if(!gameHasFocus) game.scene.pause('default'); else game.scene.resume('default'); };
+
+        window.startGame = () => {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            if (!u || !p) return alert("ENTER USERNAME AND PASSWORD");
+            myUsername = u; accountKey = btoa(u + ":" + p); 
+            let saved = localStorage.getItem(`rubies_${accountKey}`);
+            myRubies = saved ? parseInt(saved) : 100;
+            updateUI(); gameHasFocus = true;
+            document.getElementById('menu').style.display = 'none';
+            game.scene.resume('default');
+            const fId = document.getElementById('friendID').value.trim();
+            if (fId && peer) setupConnection(peer.connect(fId));
+            window.addEventListener('blur', () => { if(gameHasFocus) document.getElementById('focus-overlay').style.display = 'flex'; });
+        };
     </script>
 </body>
 </html>

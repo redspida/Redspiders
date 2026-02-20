@@ -76,10 +76,10 @@
     <div id="shop-popup">
         <h2 style="color: #ff0000; margin: 0;">UPGRADE SHOP</h2>
         <div class="shop-grid">
-            <div class="shop-item" onclick="buyUpgrade('speed')"><h4>SPEED</h4><p>+2.5% Movement</p><div class="cost">500 Rubies</div></div>
-            <div class="shop-item" onclick="buyUpgrade('jump')"><h4>JUMP</h4><p>+2.5% Height</p><div class="cost">500 Rubies</div></div>
-            <div class="shop-item" onclick="buyUpgrade('damage')"><h4>DAMAGE</h4><p>+2.5% Pushes</p><div class="cost">500 Rubies</div></div>
-            <div class="shop-item" onclick="buyUpgrade('kb')"><h4>KNOCKBACK</h4><p>+2.5% Power</p><div class="cost">500 Rubies</div></div>
+            <div class="shop-item" onclick="buyUpgrade('speed')"><h4>SPEED</h4><p>+10% Movement</p><div class="cost">500 Rubies</div></div>
+            <div class="shop-item" onclick="buyUpgrade('jump')"><h4>JUMP</h4><p>+10% Height</p><div class="cost">500 Rubies</div></div>
+            <div class="shop-item" onclick="buyUpgrade('damage')"><h4>DAMAGE</h4><p>+10% Pushes</p><div class="cost">500 Rubies</div></div>
+            <div class="shop-item" onclick="buyUpgrade('kb')"><h4>KNOCKBACK</h4><p>+10% Power</p><div class="cost">500 Rubies</div></div>
         </div>
         <button class="close-btn" onclick="toggleShop()">BACK</button>
     </div>
@@ -108,11 +108,10 @@
         let joyBase, joyThumb, btnJump, btnPush, pushActive = false, joyPointer = null, joyMoveX = 0;
         let accountKey = "", selectedColorHex = 0xff0000, currentFacing = 1, trailTimer = 0;
 
-        // MULTIPLIERS & BOOST
         let multSpeed = 1.0, multJump = 1.0, multDmg = 1.0, multKB = 1.0;
         let boostActive = false;
-        const BOOST_INTERVAL = 210000; // 3m 30s
-        const BOOST_DURATION = 30000;  // 30s
+        const BOOST_INTERVAL = 240000; 
+        const BOOST_DURATION = 180000; 
 
         function selectColor(index, hex) {
             selectedColorHex = hex;
@@ -137,11 +136,11 @@
         window.buyUpgrade = (type) => {
             if (myRubies >= 500) {
                 myRubies -= 500;
-                if (type === 'speed') multSpeed += 0.025;
-                if (type === 'jump') multJump += 0.025;
-                if (type === 'damage') multDmg += 0.025;
-                if (type === 'kb') multKB += 0.025;
-                saveStats(); updateUI(); addChatMessage("SYSTEM", `Purchased ${type} upgrade!`);
+                if (type === 'speed') multSpeed += 0.10;
+                if (type === 'jump') multJump += 0.10;
+                if (type === 'damage') multDmg += 0.10;
+                if (type === 'kb') multKB += 0.10;
+                saveStats(); updateUI(); addChatMessage("SYSTEM", `Purchased ${type} upgrade (+10%)!`);
             } else { addChatMessage("SYSTEM", "Not enough rubies!"); }
         };
 
@@ -194,7 +193,6 @@
         function create() {
             this.physics.world.setBounds(0, 0, 5000, 2000);
             
-            // BACKGROUND TOWERS
             towerLayer = this.add.graphics().setScrollFactor(0.2);
             for(let i=0; i<30; i++) {
                 let color = Math.random() > 0.5 ? 0x1a1a1a : 0x2a2a2a;
@@ -229,7 +227,7 @@
 
             player = this.add.rectangle(2500, 400, 40, 40, selectedColorHex);
             this.physics.add.existing(player);
-            player.body.setCollideWorldBounds(true).setDragX(1500);
+            player.body.setCollideWorldBounds(true).setDragX(1500).setBounce(0);
             
             myNameTag = this.add.text(player.x, player.y - 70, '', { fontSize: '18px', fill: '#fff' }).setOrigin(0.5);
             chargeBar = this.add.graphics();
@@ -246,14 +244,14 @@
             peer.on('open', id => document.getElementById('my-id').innerText = id);
             peer.on('connection', setupConnection); 
             
-            // Global Multiplier Timer (3m 30s)
             setInterval(() => {
                 boostActive = true;
                 document.getElementById('boost-indicator').style.display = 'block';
-                addChatMessage("SYSTEM", "🔥 2X BOOST ACTIVE FOR 30s! 🔥");
+                addChatMessage("SYSTEM", "🔥 2X BOOST ACTIVE FOR 3 MINUTES! 🔥");
                 setTimeout(() => {
                     boostActive = false;
                     document.getElementById('boost-indicator').style.display = 'none';
+                    addChatMessage("SYSTEM", "Boost has faded away...");
                 }, BOOST_DURATION);
             }, BOOST_INTERVAL);
 
@@ -344,9 +342,19 @@
 
         function handleDeath(cause) {
             myDeaths++;
-            myRubies = Math.max(0, myRubies - (cause === 'void_pushed' ? 35 : 20)); 
+            let victimRubiesLost = 0;
+            if (myRubies >= 75 && lastHitBy && (Date.now() - lastHitTime < 5000)) {
+                victimRubiesLost = 75;
+                myRubies -= 75;
+            } else {
+                myRubies = Math.max(0, myRubies - (cause === 'void_pushed' ? 35 : 20)); 
+            }
             saveStats();
-            if (lastHitBy && (Date.now() - lastHitTime < 5000)) { if (conn?.open) conn.send({ type: 'KILLED_ME', killerId: lastHitBy }); }
+            
+            if (lastHitBy && (Date.now() - lastHitTime < 5000)) { 
+                if (conn?.open) conn.send({ type: 'KILLED_ME', killerId: lastHitBy, victimName: myUsername, stolen: victimRubiesLost }); 
+            }
+            
             player.setPosition(2500, 400); player.body.setVelocity(0,0);
             myHealth = 100; updateUI();
         }
@@ -363,7 +371,10 @@
                 joyMoveX = Math.cos(angle); 
             }});
             scene.input.on('pointerup', (p) => { if (joyPointer && p.id === joyPointer.id) { joyPointer = null; joyThumb.x = joyBase.x; joyThumb.y = joyBase.y; joyMoveX = 0; } });
+            
             btnJump = scene.add.circle(sw - 80, sh - 100, 55, 0x888888, 0.4).setInteractive().setScrollFactor(0);
+            scene.add.text(sw - 80, sh - 100, '↑', { fontSize: '40px', fill: '#ffffff' }).setOrigin(0.5).setScrollFactor(0);
+            
             btnJump.on('pointerdown', () => { if (jumpCount < 2) { player.body.setVelocityY(-850 * (boostActive ? multJump * 2 : multJump)); jumpCount++; }});
             btnPush = scene.add.circle(sw - 160, sh - 180, 40, 0x888888, 0.4).setInteractive().setScrollFactor(0);
             btnPush.on('pointerdown', () => { pushActive = true; isCharging = true; triggerNormalPush(); });
@@ -407,9 +418,11 @@
                     let p = remotePlayers[c.peer]; 
                     if (!p) { 
                         p = game.scene.scenes[0].add.rectangle(data.x, data.y, 40, 40, data.color || 0xff0000); 
-                        game.scene.scenes[0].physics.add.existing(p); p.body.setAllowGravity(false);
+                        game.scene.scenes[0].physics.add.existing(p); 
+                        p.body.setAllowGravity(false).setImmovable(true).setBounce(0); 
                         p.tag = game.scene.scenes[0].add.text(0, 0, '', { fontSize: '14px', fill: '#f00' }).setOrigin(0.5); 
                         remotePlayers[c.peer] = p; 
+                        game.scene.scenes[0].physics.add.collider(player, p);
                     }
                     p.setPosition(data.x, data.y); p.setFillStyle(data.color); p.userName = data.name; p.kills = data.kills; p.deaths = data.deaths; p.rubies = data.rubies; p.charging = data.charging; p.chargeVal = data.chargeVal; p.tag.setPosition(data.x, data.y - 70).setText(`${data.name} [${Math.ceil(data.hp)}/100]`); updateLeaderboard();
                 }
@@ -424,7 +437,16 @@
                         lastHitBy = c.peer; lastHitTime = Date.now(); updateUI(); if (myHealth <= 0) handleDeath('killed'); 
                     }
                 }
-                if (data.type === 'KILLED_ME' && data.killerId === peer.id) { myKills++; saveStats(); updateUI(); }
+                if (data.type === 'KILLED_ME' && data.killerId === peer.id) { 
+                    myKills++; 
+                    if (data.stolen > 0) {
+                        myRubies += data.stolen;
+                        addChatMessage("SYSTEM", `${myUsername} eliminated ${data.victimName} and took 75 rubies!`);
+                    } else {
+                        addChatMessage("SYSTEM", `${myUsername} eliminated ${data.victimName}!`);
+                    }
+                    saveStats(); updateUI(); 
+                }
                 if (data.type === 'RUBY_TAKEN') removeRubyLocal(data.rubyId);
                 if (data.type === 'RUBY_SPAWN') spawnTieredRuby(data.x, data.y);
             });

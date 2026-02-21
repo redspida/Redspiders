@@ -41,7 +41,6 @@
         #leaderboard { background: rgba(20, 0, 0, 0.85); border: 2px solid #600; padding: 10px; border-radius: 8px; width: 220px; color: #fff; font-size: 12px; margin-top: 5px; }
         .lb-header { font-weight: bold; border-bottom: 1px solid #ff0000; color: #ff3333; display: grid; grid-template-columns: 2fr 1fr 1fr; }
         .lb-row { display: grid; grid-template-columns: 2fr 1fr 1fr; margin-bottom: 2px; }
-        #boost-indicator { color: #ffd700; font-weight: bold; font-size: 14px; text-shadow: 0 0 5px #f00; display: none; margin-top: 5px; }
     </style>
 </head>
 <body onclick="handleGlobalClick(event)">
@@ -69,12 +68,11 @@
     <div id="ui-container">
         <div class="bar-bg"><div class="bar-text" id="hp-label">100 HP</div><div id="health-fill"></div></div>
         <div class="bar-bg" style="border-color:#888;"><span style="position:absolute;left:5px;top:0px;font-size:12px;">🔴</span><div class="bar-text" id="ruby-count-text" style="margin-left:22px;">0</div></div>
-        <div id="boost-indicator">🔥 2X BOOST ACTIVE! 🔥</div>
         <div id="leaderboard"><div class="lb-header"><span>NAME</span><span>K/D</span><span>RUBIES</span></div><div id="lb-content"></div></div>
     </div>
 
     <div id="shop-popup">
-        <h2 style="color: #ff0000; margin: 0;">UPGRADE SHOP</h2>
+        <h2 style="color: #ff0000; margin: 0;">UPGRADE SHOP (5 MIN)</h2>
         <div class="shop-grid">
             <div class="shop-item" onclick="buyUpgrade('speed')"><h4>SPEED</h4><p>+10% Movement</p><div class="cost">500 Rubies</div></div>
             <div class="shop-item" onclick="buyUpgrade('jump')"><h4>JUMP</h4><p>+10% Height</p><div class="cost">500 Rubies</div></div>
@@ -109,9 +107,6 @@
         let accountKey = "", selectedColorHex = 0xff0000, currentFacing = 1, trailTimer = 0;
 
         let multSpeed = 1.0, multJump = 1.0, multDmg = 1.0, multKB = 1.0;
-        let boostActive = false;
-        const BOOST_INTERVAL = 240000; 
-        const BOOST_DURATION = 180000; 
 
         function selectColor(index, hex) {
             selectedColorHex = hex;
@@ -126,10 +121,6 @@
                 localStorage.setItem(`rubies_${accountKey}`, myRubies); 
                 localStorage.setItem(`kills_${accountKey}`, myKills);
                 localStorage.setItem(`deaths_${accountKey}`, myDeaths);
-                localStorage.setItem(`mSpeed_${accountKey}`, multSpeed);
-                localStorage.setItem(`mJump_${accountKey}`, multJump);
-                localStorage.setItem(`mDmg_${accountKey}`, multDmg);
-                localStorage.setItem(`mKB_${accountKey}`, multKB);
             } 
         }
 
@@ -140,7 +131,18 @@
                 if (type === 'jump') multJump += 0.10;
                 if (type === 'damage') multDmg += 0.10;
                 if (type === 'kb') multKB += 0.10;
-                saveStats(); updateUI(); addChatMessage("SYSTEM", `Purchased ${type} upgrade (+10%)!`);
+
+                addChatMessage("SYSTEM", `Purchased ${type} boost (+10%) for 5 minutes!`);
+                
+                setTimeout(() => {
+                   if (type === 'speed') multSpeed = Math.max(1.0, multSpeed - 0.10);
+                   if (type === 'jump') multJump = Math.max(1.0, multJump - 0.10);
+                   if (type === 'damage') multDmg = Math.max(1.0, multDmg - 0.10);
+                   if (type === 'kb') multKB = Math.max(1.0, multKB - 0.10);
+                   addChatMessage("SYSTEM", `A ${type} upgrade has expired.`);
+                }, 300000);
+
+                saveStats(); updateUI();
             } else { addChatMessage("SYSTEM", "Not enough rubies!"); }
         };
 
@@ -243,17 +245,6 @@
             peer = new Peer(); 
             peer.on('open', id => document.getElementById('my-id').innerText = id);
             peer.on('connection', setupConnection); 
-            
-            setInterval(() => {
-                boostActive = true;
-                document.getElementById('boost-indicator').style.display = 'block';
-                addChatMessage("SYSTEM", "🔥 2X BOOST ACTIVE FOR 3 MINUTES! 🔥");
-                setTimeout(() => {
-                    boostActive = false;
-                    document.getElementById('boost-indicator').style.display = 'none';
-                    addChatMessage("SYSTEM", "Boost has faded away...");
-                }, BOOST_DURATION);
-            }, BOOST_INTERVAL);
 
             this.scene.pause();
         }
@@ -267,11 +258,8 @@
             if (!gameHasFocus || typingMode || shopOpen || logOpen) return;
             if (Phaser.Input.Keyboard.JustDown(keys.M)) toggleMenu();
             
+            let baseSpeed = 450 * multSpeed;
             let vx = 0;
-            let currentMultSpeed = boostActive ? (multSpeed * 2) : multSpeed;
-            let currentMultJump = boostActive ? (multJump * 2) : multJump;
-
-            let baseSpeed = 450 * currentMultSpeed;
             if (cursors.left.isDown || keys.A.isDown || (joyPointer && joyMoveX < -0.3)) { vx = -baseSpeed; currentFacing = -1; }
             else if (cursors.right.isDown || keys.D.isDown || (joyPointer && joyMoveX > 0.3)) { vx = baseSpeed; currentFacing = 1; }
             player.body.setVelocityX(vx || player.body.velocity.x * 0.8);
@@ -283,7 +271,7 @@
 
             if (player.body.touching.down) jumpCount = 0;
             if ((Phaser.Input.Keyboard.JustDown(cursors.up) || Phaser.Input.Keyboard.JustDown(keys.W)) && jumpCount < 2) { 
-                player.body.setVelocityY(-850 * currentMultJump); jumpCount++; 
+                player.body.setVelocityY(-850 * multJump); jumpCount++; 
             }
 
             chargeBar.clear();
@@ -375,7 +363,7 @@
             btnJump = scene.add.circle(sw - 80, sh - 100, 55, 0x888888, 0.4).setInteractive().setScrollFactor(0);
             scene.add.text(sw - 80, sh - 100, '↑', { fontSize: '40px', fill: '#ffffff' }).setOrigin(0.5).setScrollFactor(0);
             
-            btnJump.on('pointerdown', () => { if (jumpCount < 2) { player.body.setVelocityY(-850 * (boostActive ? multJump * 2 : multJump)); jumpCount++; }});
+            btnJump.on('pointerdown', () => { if (jumpCount < 2) { player.body.setVelocityY(-850 * multJump); jumpCount++; }});
             btnPush = scene.add.circle(sw - 160, sh - 180, 40, 0x888888, 0.4).setInteractive().setScrollFactor(0);
             btnPush.on('pointerdown', () => { pushActive = true; isCharging = true; triggerNormalPush(); });
             btnPush.on('pointerup', () => { pushActive = false; handleAttackRelease(); });
@@ -430,10 +418,8 @@
                     if (data.isBig) fireProjectile(data.x, data.y, data.pushDir, false); else showPushEffect(data.x, data.y, false);
                     let dist = Phaser.Math.Distance.Between(player.x, player.y, data.x, data.y);
                     if (dist < (data.isBig ? 400 : 130)) { 
-                        let powerMult = boostActive ? (multKB * 2) : multKB;
-                        let damageMult = boostActive ? (multDmg * 2) : multDmg;
-                        player.body.setVelocity(data.pushDir * (data.isBig ? 1500 : 800) * powerMult, -200); 
-                        myHealth -= (data.isBig ? 25 : 5) * damageMult; 
+                        player.body.setVelocity(data.pushDir * (data.isBig ? 1500 : 800) * multKB, -200); 
+                        myHealth -= (data.isBig ? 25 : 5) * multDmg; 
                         lastHitBy = c.peer; lastHitTime = Date.now(); updateUI(); if (myHealth <= 0) handleDeath('killed'); 
                     }
                 }
@@ -470,10 +456,8 @@
             myRubies = savedRubies ? parseInt(savedRubies) : 0; 
             myKills = parseInt(localStorage.getItem(`kills_${accountKey}`)) || 0;
             myDeaths = parseInt(localStorage.getItem(`deaths_${accountKey}`)) || 0;
-            multSpeed = parseFloat(localStorage.getItem(`mSpeed_${accountKey}`)) || 1.0;
-            multJump = parseFloat(localStorage.getItem(`mJump_${accountKey}`)) || 1.0;
-            multDmg = parseFloat(localStorage.getItem(`mDmg_${accountKey}`)) || 1.0;
-            multKB = parseFloat(localStorage.getItem(`mKB_${accountKey}`)) || 1.0;
+            
+            multSpeed = 1.0; multJump = 1.0; multDmg = 1.0; multKB = 1.0;
 
             player.setFillStyle(selectedColorHex);
             updateUI(); gameHasFocus = true; document.getElementById('menu').style.display = 'none'; 
